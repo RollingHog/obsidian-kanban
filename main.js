@@ -771,11 +771,6 @@ const TRANSLATIONS = {
     rec_quarterly: 'Quarterly',
     rec_yearly: 'Yearly',
     rec_custom_suffix: ' (custom)',
-    // Created at
-    created_field: 'Created at (➕)',
-    created_field_desc: 'Automatically add a read-only creation date (➕ YYYY-MM-DD) to newly created tasks. Existing tasks are left untouched. Compatible with the Obsidian Tasks plugin.',
-    created_label: 'Created',
-    created_readonly_desc: 'Set automatically when the task was created. Read-only.',
     prio_none: 'None',
     prio_highest: '🔺 Highest',
     prio_high: '⏫ High',
@@ -897,6 +892,13 @@ const TRANSLATIONS = {
     automove_writer_auto: 'Automatic (desktop only)',
     automove_writer_on: 'On',
     automove_writer_off: 'Off',
+    sec_display: 'Display settings',
+    // Created at
+    created_field: 'Created at (➕)',
+    created_field_desc: 'Automatically add a read-only creation date (➕ YYYY-MM-DD) to newly created tasks. Existing tasks are left untouched. Compatible with the Obsidian Tasks plugin.',
+    created_label: 'Created',
+    created_readonly_desc: 'Set automatically when the task was created. Read-only.',
+    
     sec_projects: 'Projects and colors',
     projects_help: 'Give each project a color. Use #project/<name> in your tasks to link them.',
     scan_folders: 'Scan folder(s) for projects',
@@ -6729,6 +6731,19 @@ class KanbanSettingTab extends PluginSettingTab {
           this.plugin.queueAutoMove();
         });
       });
+
+    // -- Display -------------------------------------------------------
+    new Setting(containerEl).setName(t('sec_display')).setHeading();
+    
+    new Setting(containerEl)
+      .setName(t('created_field'))
+      .setDesc(t('created_field_desc'))
+      .addToggle((toggle) => toggle
+        .setValue(!!this.plugin.settings.createdFieldEnabled)
+        .onChange(async (v) => {
+          this.plugin.settings.createdFieldEnabled = v;
+          await this.plugin.saveSettings();
+        }));
 
     // -- Outlook -------------------------------------------------------
     new Setting(containerEl).setName(t('ol_section')).setHeading();
