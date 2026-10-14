@@ -771,6 +771,11 @@ const TRANSLATIONS = {
     rec_quarterly: 'Quarterly',
     rec_yearly: 'Yearly',
     rec_custom_suffix: ' (custom)',
+    // Created at
+    created_field: 'Created at (➕)',
+    created_field_desc: 'Automatically add a read-only creation date (➕ YYYY-MM-DD) to newly created tasks. Existing tasks are left untouched. Compatible with the Obsidian Tasks plugin.',
+    created_label: 'Created',
+    created_readonly_desc: 'Set automatically when the task was created. Read-only.',
     prio_none: 'None',
     prio_highest: '🔺 Highest',
     prio_high: '⏫ High',
@@ -1139,6 +1144,11 @@ function parseTaskLine(line, filePath, lineNum) {
          + String(Math.min(59, parseInt(timeMatch[2], 10))).padStart(2, '0');
   }
 
+  // Aanmaakdatum: ➕ JJJJ-MM-DD (read-only, Tasks-compatibel).
+  let createdAt = null;
+  const createdMatch = rest.match(/➕\s*(\d{4}-\d{2}-\d{2})/);
+  if (createdMatch) createdAt = createdMatch[1];
+
   // Microsoft To Do-koppeling (zie TD_MARKER_RE bovenin).
   let todoList = null, todoId = null;
   const tdMatch = rest.match(TD_MARKER_RE);
@@ -1196,6 +1206,7 @@ function parseTaskLine(line, filePath, lineNum) {
     .replace(TD_MARKER_RE_G, '')
     .replace(TDS_MARKER_RE_G, '')
     .replace(GH_MARKER_RE_G, '')
+    .replace(/➕\s*\d{4}-\d{2}-\d{2}/g, '')
     .replace(/📅\s*\d{4}-\d{2}-\d{2}/g, '')
     .replace(/⏰\s*\d{1,2}:\d{2}/g, '')
     .replace(/🔁\s+every\s+(?:\d+\s+)?(?:days?|weeks?|months?|years?|daily|weekly|monthly|yearly)/gi, '')
@@ -1209,7 +1220,7 @@ function parseTaskLine(line, filePath, lineNum) {
     .trim();
 
   return {
-    text, dueDate, time, column, project, client, priority, recurrence, done, noteLink, cover,
+    text, dueDate, time, createdAt, column, project, client, priority, recurrence, done, noteLink, cover,
     todoList, todoId, todoStepId,
     ghProject, ghItem,
     file: filePath, line: lineNum, indent,
@@ -1823,6 +1834,7 @@ module.exports = class KanbanPlugin extends Plugin {
   formatTaskLine(task) {
     const done = task.column === this.settings.doneColumn;
     let line = `- [${done ? 'x' : ' '}] ${task.text.trim()}`;
+    if (task.createdAt) line += ` ➕ ${task.createdAt}`;
     if (task.recurrence) line += ` 🔁 ${task.recurrence}`;
     if (task.dueDate) line += ` 📅 ${task.dueDate}`;
     if (task.time) line += ` ⏰ ${task.time}`;
@@ -2021,7 +2033,7 @@ module.exports = class KanbanPlugin extends Plugin {
       // Tekst loopt tot het eerste metadata-/cover-/wikilink-token; alles daarna blijft staan.
       // [cover:: vóór [[ zodat een wikilink-cover bij het cover-token stopt, niet bij de inner [[.
       // %%td: hoort er ook bij: de To Do-marker mag een titelwijziging nooit kwijtraken.
-      const idx = m[2].search(/\s*(📅|⏰|🔁|🔺|⏫|🔼|🔽|⏬|#kanban\/|#project\/|#client\/|\[cover::|\[\[|%%td:)/);
+      const idx = m[2].search(/\s*(➕|📅|⏰|🔁|🔺|⏫|🔼|🔽|⏬|#kanban\/|#project\/|#client\/|\[cover::|\[\[|%%td:)/);
       const rest = idx < 0 ? '' : m[2].slice(idx);
       lines[task.line] = m[1] + newText + rest;
       return lines.join('\n');
@@ -2328,6 +2340,7 @@ module.exports = class KanbanPlugin extends Plugin {
       title: task.text || noteName,
       date: isoFromDate(now),
       time,
+      created: task.createdAt || '',
       project: task.project || '',
       due: task.dueDate || '',
       status: colLabel,
@@ -2473,6 +2486,7 @@ module.exports = class KanbanPlugin extends Plugin {
           const targetCol = this.settings.defaultColumn;
           const nextTask = {
             text: task.text,
+            createdAt: this.settings.createdFieldEnabled ? todayISO() : '',
             dueDate: nextDue,
             time: task.time,
             priority: task.priority,
@@ -3450,6 +3464,13 @@ class KanbanView extends ItemView {
       dueEl.dataset.field = 'due';
       if (task.dueDate) dueEl.dataset.value = task.dueDate;
     }
+
+    if (task.createdAt) {
+      const createdEl = meta.createSpan({ cls: 'tk-created', text: `➕ ${task.createdAt}` });
+      createdEl.dataset.field = 'created';
+      createdEl.dataset.value = task.createdAt;
+    }
+
     if (task.priority) {
       const def = this.plugin.getPriorityDef(task.priority);
       const emoji = PRIORITY_ICONS[task.priority] || '';
@@ -5452,6 +5473,7 @@ class AddTaskModal extends Modal {
       recurrence: '',
       cover: '',
       client: '',
+      createdAt: plugin.settings.createdFieldEnabled ? todayISO() : '',
       targetFile: defaultFile || plugin.settings.inboxNote,
     };
   }
@@ -5712,6 +5734,18 @@ class EditTaskModal extends Modal {
         text.setValue(this.newTime);
         text.onChange((v) => (this.newTime = v));
       });
+
+    // Aanmaakdatum: alleen-lezen, geen invoerveld — puur informatief.
+    if (this.plugin.settings.createdFieldEnabled || this.task.createdAt) {
+      new Setting(contentEl)
+        .setName(t('created_label'))
+        .setDesc(t('created_readonly_desc'))
+        .addText((text) => {
+          text.setValue(this.task.createdAt || '—');
+          text.setDisabled(true);
+          text.inputEl.addClass('tk-readonly-input');
+        });
+    }
 
     new Setting(contentEl)
       .setName(t('repeat'))
