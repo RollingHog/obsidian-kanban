@@ -537,6 +537,13 @@ const TRANSLATIONS = {
     automove_writer_auto: 'Automatisch (alleen desktop)',
     automove_writer_on: 'Aan',
     automove_writer_off: 'Uit',
+    sec_issue_management: 'Taakbeheer',
+    // Aanmaakdatum
+    created_field: 'Aanmaakdatum (➕)',
+    created_field_desc: 'Voeg automatisch een alleen-lezen aanmaakdatum (➕ YYYY-MM-DD) toe aan nieuw aangemaakte taken. Bestaande taken blijven ongewijzigd. Compatibel met de Obsidian Tasks-plugin.',
+    created_label: 'Aangemaakt',
+    created_readonly_desc: 'Automatisch ingesteld toen de taak werd aangemaakt. Alleen-lezen.',
+
     sec_projects: 'Projecten en kleuren',
     projects_help: 'Geef per project een kleur. Gebruik #project/<naam> in je taken om ze hieraan te koppelen.',
     scan_folders: 'Scan-map(pen) voor projecten',
@@ -895,13 +902,13 @@ const TRANSLATIONS = {
     automove_writer_auto: 'Automatic (desktop only)',
     automove_writer_on: 'On',
     automove_writer_off: 'Off',
-    sec_display: 'Display settings',
+    sec_issue_management: 'Issue management',
     // Created at
     created_field: 'Created at (➕)',
     created_field_desc: 'Automatically add a read-only creation date (➕ YYYY-MM-DD) to newly created tasks. Existing tasks are left untouched. Compatible with the Obsidian Tasks plugin.',
     created_label: 'Created',
     created_readonly_desc: 'Set automatically when the task was created. Read-only.',
-    
+
     sec_projects: 'Projects and colors',
     projects_help: 'Give each project a color. Use #project/<name> in your tasks to link them.',
     scan_folders: 'Scan folder(s) for projects',
@@ -6810,8 +6817,8 @@ class KanbanSettingTab extends PluginSettingTab {
         });
       });
 
-    // -- Display -------------------------------------------------------
-    new Setting(containerEl).setName(t('sec_display')).setHeading();
+    // -- Issue management ---------------------------------------------
+    new Setting(containerEl).setName(t('sec_issue_management')).setHeading();
     
     new Setting(containerEl)
       .setName(t('created_field'))
